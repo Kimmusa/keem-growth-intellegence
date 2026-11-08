@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum QuestStatus {
+  SUGGESTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  RESCHEDULED
+  DELEGATED
+  CANCELLED
+  EXPIRED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  businesses   Business[]
+}
+
+model Business {
+  id             String   @id @default(cuid())
+  ownerId        String
+  owner          User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name           String
+  category       String
+  subcategory    String?
+  location       String
+  website        String?
+  description    String?
+  products       String?
+  targetCustomers String?
+  businessSize   String?
+  goals          String?
+  challenges     String?
+  timezone       String   @default("Africa/Lagos")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  quests         Quest[]
+  tasks          Task[]
+  opportunities Opportunity[]
+  @@index([ownerId])
+}
+
+model Quest {
+  id              String      @id @default(cuid())
+  businessId      String
+  business        Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  rationale       String?
+  expectedBenefit String?
+  category        String      @default("Growth")
+  priority        Priority    @default(MEDIUM)
+  status          QuestStatus @default(SUGGESTED)
+  dueAt           DateTime?
+  estimatedMinutes Int?
+  completionCriteria String?
+  sourceName      String?
+  sourceUrl       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  @@index([businessId, createdAt])
+  @@index([businessId, status])
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  businessId  String
+  business    Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  dueAt       DateTime?
+  assignedTo  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  @@index([businessId, status])
+}
+
+model Opportunity {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  title       String
+  summary     String
+  category    String
+  location    String?
+  sourceName  String?
+  sourceUrl   String?
+  eventDate   DateTime?
+  verifiedAt  DateTime?
+  createdAt   DateTime @default(now())
+  @@index([businessId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+}
